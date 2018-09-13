@@ -19,6 +19,7 @@ from pprint import pprint
 # N_SAMPLES = 10
 N_SAMPLES = 10000
 # N_SAMPLES = 25000
+SAVE_EVERY_N_ITERATIONS = 100
 INPUTS = f"{PROJECT_ROOT}/inputs"
 OUTPUTS = f"{PROJECT_ROOT}/outputs"
 META_DATA = ["dataset", "country", "state", "municipality"]
@@ -42,9 +43,9 @@ IMAGE_REQUEST = f"{IMAGE_URL}&{size}&{pitch}&{fov}&{key}"
 
 
 def remove_previous_results():
-    subprocess.Popen(["rm", f"{OUTPUTS}/data.csv"])
     subprocess.Popen(["rm", "-r", f"{OUTPUTS}/images/"])
     subprocess.Popen(["mkdir", f"{OUTPUTS}/images/"])
+    subprocess.Popen(["rm", f"{OUTPUTS}/data.csv"])
 
 
 def standarize_variable_names(data, dataset):
@@ -111,7 +112,9 @@ def reset_index_name(data):
 
 
 def coordinates_and_images(data):
+    counter = 0
     for r in tqdm(list(data.index)):
+        counter += 1
         location = row_location(r, data)
         resp = requests.get(f"{META_DATA_REQUEST}&{location}").json()
         if resp["status"] != "OK":
@@ -125,6 +128,10 @@ def coordinates_and_images(data):
         with open(fname, "wb") as f:
             f.write(requests.get(f"{IMAGE_REQUEST}&{pano}").content)
         crop_image_to_remove_logo(fname)
+        if counter >= SAVE_EVERY_N_ITERATIONS:
+            data.to_csv(f"{OUTPUTS}/data.csv")
+            print("    - SAVED CURRENT DATA")
+            counter = 0
     return data
 
 
@@ -156,6 +163,10 @@ def remove_duplicate_images(data):
     return data[~dups]
 
 
+def backup():
+    subprocess.Popen(["zip", "-r", f"{PROJECT_ROOT}/outputs.zip", f"{OUTPUTS}"])
+
+
 if __name__ == "__main__":
     remove_previous_results()
     print(f"[+] INGESTING...")
@@ -171,4 +182,6 @@ if __name__ == "__main__":
     print(data.head())
     print(f"[+] STORING UNIFIED DATA...")
     data.to_csv(f"{OUTPUTS}/data.csv")
+    print(f"[+] BACKING UP OUTPUTS (GUARD AGAINST DELETIONS)...")
+    backup()
     print("[+] DONE")
