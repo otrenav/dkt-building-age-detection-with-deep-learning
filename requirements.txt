@@ -11,6 +11,7 @@ geopy==1.16.0
 matplotlib==2.2.3
 pandas==0.23.4
 requests==2.19.1
+scikit-image==0.14.0
 scikit-learn==0.19.2
 scipy==1.1.0
 tqdm==4.26.0
