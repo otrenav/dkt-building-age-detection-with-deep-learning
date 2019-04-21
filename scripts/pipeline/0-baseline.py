@@ -1,4 +1,3 @@
-
 import sys
 import git
 
@@ -20,6 +19,8 @@ OUTPUTS = f"{PROJECT_ROOT}/outputs"
 
 SAMPLE_PROPORTION = 0.7
 CROSS_VALIDATION = 3
+CATEGORY_BINS = []
+N_CATEGORIES = 2
 N_TREES = 20
 VERBOSE = 1
 N_JOBS = 4
@@ -60,6 +61,7 @@ GRID = {
     "min_samples_split": [2],
     "min_samples_leaf": [1],
 }
+DECADES = {}
 
 
 def recode_missing_values(data):
@@ -68,10 +70,51 @@ def recode_missing_values(data):
     return data
 
 
+def identify_categories(data):
+    if N_CATEGORIES is None:
+        identify_decade_categories(data)
+    else:
+        identify_custom_categories(data)
+
+
+def identify_decade_categories(data):
+    decades = data.year.apply(decade)
+    decades = sorted(list(set(decades)))
+    globals()["DECADES"] = {d: i for i, d in enumerate(decades)}
+
+
+def decade(num):
+    return int(float(str(float(num))[:3] + "0"))
+
+
+def identify_custom_categories(data):
+    _, bins = pd.qcut(
+        data.year, N_CATEGORIES, labels=False, retbins=True, duplicates="drop"
+    )
+    globals()["CATEGORY_BINS"] = bins
+
+
 def recode_categorical_values(data):
     data = data.replace(CATEGORICALS_RECODING)
-    data.year = data.year.apply(lambda x: decade(x))
+    data[OUTPUT_VAR] = data[OUTPUT_VAR].apply(category)
     return data
+
+
+def categories(list_of_nums):
+    return [category(num) for num in list_of_nums]
+
+
+def category(num):
+    if N_CATEGORIES is None:
+        return DECADES.get(decade(num), -1)
+    return custom_category(num)
+
+
+def custom_category(num):
+    for i in range(1, len(CATEGORY_BINS)):
+        if CATEGORY_BINS[i - 1] < num <= CATEGORY_BINS[i]:
+            return i - 1
+    return -1
 
 
 def split_train_validate_samples(data):
@@ -93,24 +136,16 @@ def train_and_find_best_predictor(data):
     return search.best_estimator_
 
 
-def decades(list_of_nums):
-    return [decade(num) for num in list_of_nums]
-
-
-def decade(num):
-    return int(float(str(float(num))[:3] + "0"))
-
-
 def build_confusion_matrix(predictor, data):
-    yp = decades(list(predictor.predict(data[INPUT_VARS])))
-    y = decades(list(data[OUTPUT_VAR]))
+    yp = list(predictor.predict(data[INPUT_VARS]))
+    y = list(data[OUTPUT_VAR])
     cm = confusion_matrix(y, yp)
     print(cm)
     return cm
 
 
-def save_confusion_matrix_graph(cm, data, normalize=False):
-    classes = sorted(list(set(decades(data.year.unique()))))
+def save_confusion_matrix_graph(cm, data):
+    classes = sorted(list(set(categories(data.year.unique()))))
     cmap = plt.cm.Blues
     plt.figure()
     plt.imshow(cm, interpolation="nearest", cmap=cmap)
@@ -135,29 +170,28 @@ def save_confusion_matrix_graph(cm, data, normalize=False):
 def evaluate_confusion_matrix(cm, data):
     c = 0
     t = data.shape[0]
-    for i in range(len(cm)):
+    for i, _ in enumerate(cm):
         c += cm[i][i]
     print(f"    - CORRECT PREDICTIONS: {c}/{t} ({c/t})")
 
 
 if __name__ == "__main__":
-    data = pd.read_csv(f"{OUTPUTS}/data.csv")
-    #
-    # TODO: Remove
-    #
-    data = data[~data.lat.isnull()]
+    data_ = pd.read_csv(f"{OUTPUTS}/data.csv")
+    data_ = data_[~data_.lat.isnull()]
+    print(f"[+] IDENTIFYING CATEGORIES...")
+    identify_categories(data_)
     print(f"[+] RECODING MISSING VALUES...")
-    data = recode_missing_values(data)
+    data_ = recode_missing_values(data_)
     print(f"[+] RECODING CATEGORICAL VALUES...")
-    data = recode_categorical_values(data)
+    data_ = recode_categorical_values(data_)
     print(f"[+] SPLITTING INTO TRAININGN AND VALIDATION SAMPLES...")
-    data_train, data_validate = split_train_validate_samples(data)
+    data_train, data_validate = split_train_validate_samples(data_)
     print(f"[+] TRAINING WITH GRID SEARCH CV FOR RANDOM FORESTS...")
     best_predictor = train_and_find_best_predictor(data_train)
     print(f"[+] FORMING CONFUSION MATRIX...")
-    cm = build_confusion_matrix(best_predictor, data_validate)
+    cm_ = build_confusion_matrix(best_predictor, data_validate)
     print(f"[+] GRAPHING CONFUSION MATRIX...")
-    save_confusion_matrix_graph(cm, data)
+    save_confusion_matrix_graph(cm_, data_validate)
     print(f"[+] EVALUATING PREDCITOR...")
-    evaluate_confusion_matrix(cm, data)
+    evaluate_confusion_matrix(cm_, data_validate)
     print("[+] DONE")

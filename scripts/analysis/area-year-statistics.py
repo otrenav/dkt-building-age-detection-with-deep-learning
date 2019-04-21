@@ -46,9 +46,6 @@ def numeric_statistics(data, var):
 
 if __name__ == "__main__":
     data = pd.read_csv(f"{OUTPUTS}/data.csv")
-    #
-    # TODO: Remove
-    #
     data = data[~data.lat.isnull()]
     print(f"[+] FINDING BUILDINGS IN AREA ({3.14 * RADIUS ** 2} KM2)...")
     data_subset = buildings_within_radius(data)

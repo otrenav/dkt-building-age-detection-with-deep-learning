@@ -1,4 +1,3 @@
-
 import sys
 import git
 
@@ -37,4 +36,4 @@ if __name__ == "__main__":
     n_end = data.shape[0]
     print(f"    - Kept {n_end}/{n_start} observations ({n_end/n_start})")
     print("[+] DONE")
-    data.to_csv(f"{OUTPUTS}/data.csv")
+    data.to_csv(f"{OUTPUTS}/data.csv", index=False)

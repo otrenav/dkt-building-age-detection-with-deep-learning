@@ -1,4 +1,3 @@
-
 import sys
 import git
 
@@ -16,16 +15,14 @@ from PIL import Image
 from tqdm import tqdm
 from pprint import pprint
 
-# N_SAMPLES = 10
 N_SAMPLES = 10000
-# N_SAMPLES = 25000
 SAVE_EVERY_N_ITERATIONS = 100
 INPUTS = f"{PROJECT_ROOT}/inputs"
 OUTPUTS = f"{PROJECT_ROOT}/outputs"
 META_DATA = ["dataset", "country", "state", "municipality"]
 ZERO_TO_NAN = ["year", "year_alt_1", "year_alt_2", "lot_area", "building_area"]
 
-META_DATA_URL = "https://maps.googleapis.com/maps/api/streetview/metadata?"
+META_DATA_URL = "https://maps.googleapis.cgom/maps/api/streetview/metadata?"
 IMAGE_URL = "https://maps.googleapis.com/maps/api/streetview?"
 KEY = "AIzaSyCdYwmVKMEYztqPmsP26Pqc3aV1C5mzij8"
 IMAGE_BOX = (0, 0, 500, 500)
@@ -129,7 +126,7 @@ def coordinates_and_images(data):
             f.write(requests.get(f"{IMAGE_REQUEST}&{pano}").content)
         crop_image_to_remove_logo(fname)
         if counter >= SAVE_EVERY_N_ITERATIONS:
-            data.to_csv(f"{OUTPUTS}/data.csv")
+            data.to_csv(f"{OUTPUTS}/data.csv", index=False)
             print("    - SAVED CURRENT DATA")
             counter = 0
     return data
@@ -181,7 +178,7 @@ if __name__ == "__main__":
     data = remove_duplicate_images(data)
     print(data.head())
     print(f"[+] STORING UNIFIED DATA...")
-    data.to_csv(f"{OUTPUTS}/data.csv")
+    data.to_csv(f"{OUTPUTS}/data.csv", index=False)
     print(f"[+] BACKING UP OUTPUTS (GUARD AGAINST DELETIONS)...")
     backup()
     print("[+] DONE")
