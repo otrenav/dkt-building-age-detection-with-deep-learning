@@ -6,7 +6,7 @@
 #
 
 GitPython==2.1.11
-Pillow==5.2.0
+Pillow==7.1.0
 geopy==1.16.0
 matplotlib==2.2.3
 pandas==0.23.4
