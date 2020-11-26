@@ -1,8 +1,12 @@
 
+[Delta Lab](https://links.deltalab.ai/website) | [Twitter](https://links.deltalab.ai/twitter) | [LinkedIn](https://links.deltalab.ai/linkedin)
+
+---
+
 # Age Prediction for Buildings using Google Street View Images
 
-- Developed for: Dr. Teshima and Dr. Nakajima
-- Developed by: Omar Trejo
+- Omar Trejo
+- April, 2019
 
 ## Introduction
 
@@ -366,3 +370,7 @@ respective addresses/buildings have been manually deleted from the
 find out what where the deletions and remove their corresponding entries in the
 [`outputs/data.csv`](./outputs/data.csv) file. This is a convenience script to
 keep a consistent state among data and images.
+
+---
+
+> "We are the people we have been waiting for."
